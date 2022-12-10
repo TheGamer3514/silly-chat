@@ -1,0 +1,8 @@
+{
+    "botConfig": [
+        {
+            "token": "token here",
+            "prefix": "g!"
+         }
+    ]
+}
