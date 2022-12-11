@@ -27,6 +27,7 @@ with open('./config.json') as f:
   data = json.load(f)
   for c in data['botConfig']:
         print('Prefix: ' + c['prefix'])
+        print('Log Channel: ' + c['logid'])
 #Define Bot
 bot = commands.Bot(command_prefix = c['prefix'],intents=discord.Intents.all(),status=discord.Status.dnd,case_insensitive=True)
 #Load Server File
@@ -209,7 +210,7 @@ bot.help_command = NewHelpCommand()
 @bot.event
 async def on_guild_join(guild):
     print(f'I Have Been Added To {guild.name} !')
-    channel = bot.get_channel(997744873656549496)
+    channel = bot.get_channel(c['logid'])
     if channel:
         embed = discord.Embed(
             title='I have joined a new server!',
@@ -221,7 +222,7 @@ async def on_guild_join(guild):
 @bot.event
 async def on_guild_remove(guild):
     print(f'I Have Been Removed From {guild.name} !')
-    channel = bot.get_channel(997744873656549496)
+    channel = bot.get_channel(c['logid'])
     if channel:
         embed = discord.Embed(
             title='I have left a server!',
