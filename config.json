@@ -2,7 +2,8 @@
     "botConfig": [
         {
             "token": "token here",
-            "prefix": "g!"
+            "prefix": "g!",
+            "logid": "logchannelid"
          }
     ]
 }
