@@ -1,3 +1,5 @@
+![header](https://user-images.githubusercontent.com/79448904/206898283-0c4f0825-0179-47b4-9b8d-c34b8ae01ed7.png)
+
 # Silly Chat
 A discord global chat bot!
 # Why use this code?
