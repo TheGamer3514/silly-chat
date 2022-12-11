@@ -20,4 +20,3 @@ For emojis please use your own or join our discord server and we will add your b
 ![image1](https://user-images.githubusercontent.com/79448904/206898124-33552bab-a02d-41df-be59-503b2681f7fa.png)
 ![image2](https://user-images.githubusercontent.com/79448904/206898131-55ef2d9f-40b7-4f24-9337-13f0033e43db.png)
 # Bot Lists
-<iframe src="https://discordlists.xyz/widget/1051199485168066610/?color=" style="border:0px #ffffff none;" name="myiFrame" scrolling="no" frameborder="1" marginheight="0px" marginwidth="0px" height="400px" width="600px" allowfullscreen></iframe>
