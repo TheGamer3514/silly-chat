@@ -6,6 +6,8 @@ Why use any other code? Use the code you want to use!
 1. Download The Files
 2. Fill out ``config.json``
 3. Run ``main.py``. Any required modules will be installed automatically!
+# Contribution
+Do you want to add your own code to the bot? Go ahead! Make a pull request and i will check over it!
 # Links:
 - [Discord Server](https://discord.gg/3qvpkgWSbF)
 - [Free Hosting](https://panel.sillydev.co.uk)
