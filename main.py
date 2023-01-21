@@ -13,12 +13,21 @@ except ImportError:
     print("Pytz Not Found...\nInstalling...")
     os.system("pip install pytz")
     print("Pytz Installed")
+try: 
+    import os
+    import psutil  
+except ImportError: 
+    print("Psutil Not Found...\nInstalling...")
+    os.system("pip install psutil")
+    print("Psutil Installed")
 #import Modules
 import os
 from datetime import datetime
 import asyncio
 import discord
 import pytz
+import multiprocessing
+import psutil
 from discord import Message, Guild, TextChannel, Permissions
 from discord.ext import commands
 import json
@@ -38,6 +47,22 @@ else:
     servers = {"servers": []}
     with open('servers.json', 'w') as f:
         json.dump(servers, f, indent=4)
+#Load Banned Users
+if os.path.isfile("banned.json"):
+    with open('banned.json', encoding='utf-8') as f:
+        banned = json.load(f)
+else:
+    banned = {"banned": []}
+    with open('banned.json', 'w') as f:
+        json.dump(banned, f, indent=4)
+#Load Admin Users
+if os.path.isfile("admins.json"):
+    with open('admins.json', encoding='utf-8') as f:
+        adminusers = json.load(f)
+else:
+    adminusers = {"admins": []}
+    with open('admins.json', 'w') as f:
+        json.dump(adminusers, f, indent=4)
 #Auto Updating Status
 async def UpdateMemberCount():
     while True:
@@ -67,7 +92,7 @@ async def setGlobal(ctx):
                                               " Messages will now be sent and recieved!"
                                               " Have fun!",
                                   color=0x2ecc71)
-            embed.set_footer(text='To reduce the chances of your server being banned, please set a slowmode of atleast 5 seconds!')
+            embed.set_footer(text="To reduce the chances of your user's being banned, please set a slowmode of atleast 5 seconds!")
             await ctx.send(embed=embed)
         else:
             embed = discord.Embed(description="You have already setup the bot!\r\n"
@@ -97,12 +122,26 @@ async def removeGlobal(ctx):
 #Event for when a message is sent
 @bot.event
 async def on_message(message):
+    bannedusers = []
+    possiblechannels = []
+    for buser in banned["banned"]:
+        bannedusers.append(int(buser["userid"]))
+    for channel in servers["servers"]:
+        possiblechannels.append(int(channel["channelid"]))
     if message.author.bot:
         return
-    if not message.content.startswith('g!'):
+    if message.author.id in bannedusers and message.channel.id in possiblechannels:
+        user = message.author
+        embed = discord.Embed(description="**You Are Bannned!**\r\n"
+        "It seems you have been banned from using this feature!\nBelieve this is a mistake? Please join our support server!",
+        color=0x2ecc71)
+        await user.send(embed=embed)
+        await message.delete()
+    else:
         if get_globalChat(message.guild.id, message.channel.id):
             await sendAll(message)
     await bot.process_commands(message)
+#Message
 async def sendAll(message: Message):
     conent = message.content
     author = message.author
@@ -191,6 +230,14 @@ def get_globalChat_id(guild_id):
             globalChat = i
         i += 1
     return globalChat
+def get_banned_id(user_id):
+    globalChat = -1
+    i = 0
+    for bannedusr in banned["banned"]:
+        if int(bannedusr["userid"]) == int(user_id):
+            globalChat = i
+        i += 1
+    return globalChat
 
 class NewHelpCommand(commands.MinimalHelpCommand):
     async def send_pages(self):
@@ -200,10 +247,13 @@ class NewHelpCommand(commands.MinimalHelpCommand):
             description="**Prefix: g!**",
             color=discord.Color.blue()
         )
-        embed.add_field(name='g!setGlobal', value='Add global chat to a channel!', inline=False)
-        embed.add_field(name='g!removeGlobal', value='Remove global chat from a channel!', inline=False)
-        embed.add_field(name='g!invite', value='Invite me to your server!', inline=False)
-        embed.add_field(name='g!support', value='Get a link to our support server!', inline=False)
+        embed.add_field(name="g!setGlobal", value="Add global chat to a channel!", inline=False)
+        embed.add_field(name="g!removeGlobal", value="Remove global chat from a channel!", inline=False)
+        embed.add_field(name="g!ping", value="Check the bot's ping", inline=False)
+        embed.add_field(name="g!stats", value="Check the bot's stats!", inline=False)
+        embed.add_field(name="g!invite", value="Invite me to your server!", inline=False)
+        embed.add_field(name="g!support", value="Get a link to our support server!", inline=False)
+        embed.set_footer(text="Thank You For Using Silly Chat!")
         await destination.send(embed=embed)
 bot.help_command = NewHelpCommand()
 #Bot join event
@@ -230,10 +280,153 @@ async def on_guild_remove(guild):
             f'Server Name: {guild.name}\nServer ID: {guild.id}\nMember Count: {guild.member_count}\n\n**New Server Count: {len(bot.guilds)}**'
         )
         await channel.send(embed=embed)
+
+#Admin Commands
+@bot.command()
+async def ban(ctx, user: discord.User = None):
+    print(user.id)
+    adminz = []
+    currentbanned = []
+    for buser in banned["banned"]:
+        currentbanned.append(buser["userid"])
+    for admin in adminusers["admins"]:
+        adminz.append(int(admin["userid"]))
+    if ctx.message.author.id in adminz:
+        if user.id not in currentbanned:
+            banned2 = {
+                "userid": user.id
+                }
+            banned["banned"].append(banned2)
+            with open('banned.json', 'w') as f:
+                json.dump(banned, f, indent=4)
+            embed=discord.Embed(title="Banned!",color=0x662a85)
+            dmembed = discord.Embed(title="You Have Been Banned From Silly Chat!",color=0x662a85)
+            await user.send(embed=dmembed)
+            await ctx.send(embed=embed)
+        else:
+            embed=discord.Embed(title="User Is Already Banned!",color=0x662a85)
+            await ctx.send(embed=embed)
+    else:
+        embed = discord.Embed(
+            title = f'Error!',
+            description = "You are not permitted to use this command!",
+            color=0x662a85)
+        await ctx.send(embed=embed)
+@bot.command()
+async def unban(ctx, user: discord.User = None):
+    adminz = []
+    currentbanned = []
+    for buser in banned["banned"]:
+        currentbanned.append(buser["userid"])
+    for admin in adminusers["admins"]:
+        adminz.append(int(admin["userid"]))
+    if ctx.message.author.id in adminz:
+        if user.id in currentbanned:
+            userid = get_banned_id(user.id)
+            banned["banned"].pop(userid)
+            with open('banned.json', 'w') as f:
+                json.dump(banned, f, indent=4)
+            embed=discord.Embed(title="Unbanned!",color=0x662a85)
+            dmembed = discord.Embed(title="You Have Been Unbanned From Silly Chat!",color=0x662a85)
+            await user.send(embed=dmembed)
+            await ctx.send(embed=embed)
+        else:
+            embed=discord.Embed(title="User Is Not Banned!",color=0x662a85)
+            await ctx.send(embed=embed)
+    else:
+        embed = discord.Embed(
+            title = f'Error!',
+            description = "You are not permitted to use this command!",
+            color=0x662a85)
+        await ctx.send(embed=embed)
 #More Commands
 @bot.command()
 async def invite(ctx):
     embed=discord.Embed(title="\n<a:discord:942344157618405416>Invite<a:discord:942344157618405416>\n", url="https://discord.com/api/oauth2/authorize?client_id=1051199485168066610&permissions=8&scope=bot%20applications.commands",color=0x662a85)
+    await ctx.send(embed=embed)
+@bot.command(name='database', aliases=['viewdatabase'])
+async def allinvites(ctx):
+    owner = await bot.fetch_user("763471049894527006")
+    if owner == ctx.message.author:
+        print("Database Export:")
+        f = open('servers.json')
+        data = json.load(f)
+        for i in data['servers']:
+            print(i)
+            embed = discord.Embed(
+                title = f'DataBase Export!',
+                description = i,
+                color=0x662a85)
+            user = await bot.fetch_user("763471049894527006")
+            await user.send(embed=embed)
+            f.close()
+        bannedE = open('banned.json')
+        data = json.load(bannedE)
+        for i in data['banned']:
+            print(i)
+            embed = discord.Embed(
+                title = f'DataBase Export!',
+                description = i,
+                color=0x662a85)
+            user = await bot.fetch_user("763471049894527006")
+            await user.send(embed=embed)
+            bannedE.close()
+    else:
+        embed = discord.Embed(
+            title = f'Error!',
+            description = "You are not permitted to use this command!",
+            color=0x662a85)
+        await ctx.send(embed=embed)
+@bot.command(name='ping', aliases=['botping'])
+async def ping(ctx):
+		
+		embed = discord.Embed(
+				title = f'Pong!',
+				description = f'**{round(bot.latency * 1000)}ms**',
+				color=0x662a85)
+		await ctx.send(embed=embed)
+
+@bot.command(name='dm', aliases=['dmuser'])
+async def dm(ctx, user: discord.User = None, *, value=None):
+    owner = await bot.fetch_user("763471049894527006")
+    if owner == ctx.message.author:
+        if user == ctx.message.author:
+            await ctx.send("You can't DM yourself goofy")
+        else:
+            await ctx.message.delete()
+        if user == None:
+            await ctx.send(f'**{ctx.message.author},** Please mention somebody to DM.')
+        else:
+            if value == None:
+                    await ctx.send(f'**{ctx.message.author},** Please send a message to DM.')
+            else:
+                await user.send(value)
+    else:
+        embed = discord.Embed(
+            title = f'Error!',
+            description = "You are not permitted to use this command!",
+            color=0x662a85)
+        await ctx.send(embed=embed)
+@bot.command(name='gamer', aliases=['gamer3514'])
+async def gamer(ctx):
+		
+		embed = discord.Embed(
+				title = f'Gamer Is Cool!',
+				description = f'<@763471049894527006> is a super cool human! He is cracked at fortnite and he is a good friend of <@688693850180812856>.',
+				color=0x662a85)
+		await ctx.send(embed=embed)
+@bot.command(name='stats', aliases=['botstats'])
+async def stats(ctx):	
+    embed = discord.Embed(
+        title = f'My Stats:',
+        color=0x662a85)
+    embed.add_field(name="Bot Owner", value="<@763471049894527006> (763471049894527006) Gamer3514#7679", inline=False)
+    embed.add_field(name="Cpu Cores", value=multiprocessing.cpu_count(), inline=False)
+    embed.add_field(name="Server Count", value=f"{len(bot.guilds)}", inline=False)
+    embed.add_field(name="Bot Latency", value=f"{round(bot.latency * 1000)}ms", inline=False)
+    embed.add_field(name="Cpu Usage", value=f"{psutil.cpu_percent()}%", inline=False)
+    embed.add_field(name="Memory Usage", value=f"{psutil.virtual_memory().percent}%", inline=False)
+    embed.add_field(name="Total Memory", value=f"{round(psutil.virtual_memory().total / (1024.0 **3))} GB", inline=False)
     await ctx.send(embed=embed)
 
 @bot.command(name='support', aliases=['ss'])
