@@ -3,7 +3,9 @@
         {
             "token": "token here",
             "prefix": "g!",
-            "logid": "logchannelid"
+            "logid": "logchannelid",
+            "webhook": "webhook",
+            "edenai_key": "get here:  https://app.edenai.run/bricks/default"
          }
     ]
 }
