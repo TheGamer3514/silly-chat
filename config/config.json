@@ -1,0 +1,14 @@
+{
+    "botConfig": [
+        {
+            "token": "bot token",
+            "prefix": "g!",
+            "webhook": "discord webhook",
+            "edenai_key": "get here:  https://app.edenai.run/bricks/default",
+            "ptero_account_key": "ptero account token",
+            "ptero_srv_id": "ptero server id",
+            "bid": "brainshop.ai BID",
+            "key": "brainshop.ai KEY"
+         }
+    ]
+}
