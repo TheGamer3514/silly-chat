@@ -6,7 +6,7 @@ A discord global chat bot!
 Why use any other code? Use the code you want to use!
 # Setup
 1. Download The Files
-2. Fill out ``config.config.json``
+2. Fill out ``config/config.json``
 3. Run ``main.py``. Any required modules will be installed automatically!
 # Contribution
 Do you want to add your own code to the bot? Go ahead! Make a pull request and i will check over it!
