@@ -1,24 +1,23 @@
-# Silly Chat
-
 ![Discord Bots](https://top.gg/api/widget/1051199485168066610.svg)
+# Silly Chat
 
 Silly Chat is a Discord global chat bot.
 
 ## Installation
 
 1. Download the files
-2. Fill out the `config/config.json` file with your bot token and desired settings.
+2. Fill out the `config/config.json` file
 3. Run `main.py`. Any required modules will be installed automatically.
 
 ## Contributions
 
-We welcome contributions from anyone who wants to add their own code to the bot. If you'd like to contribute, simply create a pull request and we will review it.
+We welcome contributions from anyone who wants to add their own code to the bot. If you'd like to contribute, simply create a pull request and i will review it.
 
 ## Resources
 
 - [Discord server](https://discord.gg/3qvpkgWSbF)
 - [Free hosting](https://panel.sillydev.co.uk)
-- Contact us: gamer@sillydev.co.uk
+- Contact me: gamer@sillydev.co.uk
 
 ## Images
 
