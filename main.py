@@ -48,6 +48,13 @@ except ImportError:
     print("pyjokes Not Found...\nInstalling...")
     os.system("pip install pyjokes")
     print("pyjokes Installed")
+try: 
+    import os
+    import dbots  
+except ImportError: 
+    print("dbots Not Found...\nInstalling...")
+    os.system("pip install dbots")
+    print("dbots Installed")
 #import Modules
 import os
 import urllib.request
@@ -55,6 +62,7 @@ from datetime import datetime
 import asyncio
 import discord
 import shutil
+import dbots
 import pytz
 import string
 import discord_webhook
@@ -71,9 +79,12 @@ import random
 import aiohttp
 import pydactyl
 import base64
+import http.server
+import socketserver
 from io import BytesIO
 from pydactyl import PterodactylClient
-last_usage = {675589895137394705}
+last_usage = {}
+deathoptions=["Instantly Died","Had death appear at their door","Had Death Occur","Fell of a cliff","got too bored","vanished","got shot in the head with a laser","got too comftorable around bears","got depression and gave up","ended up in hell","dissapeared","Jumped Off A Building","Died","Fell up a flight of stairs.","Thought a necular power plant was a good place to go on holiday","Liked Jazz","Became a musician","Ate McDonalds","Became an artist","Turned to the dark side","Liked limes for some reason","Became a meme","Got 360 NO SCOPED BY A FOUR YEAR OLD!","Tried to play fortnite mobile","Didn't die!","Didn't have death occur!"]
 ball8answers = ['It is certain', 'It is decidedly so', 'Without a doubt', 'Yes – definitely', 'You may rely on it', 'As I see it, yes', 'Most likely', 'Outlook good', 'Yes Signs point to yes', 'Reply hazy', 'try again', 'Ask again later', 'Better not tell you now', 'Cannot predict now', 'Concentrate and ask again', 'Dont count on it', 'My reply is no', 'My sources say no', 'Outlook not so good', 'Very doubtful']
 heads_tails = ['<:Heads:1043603482474721331> Heads <:Heads:1043603482474721331>', '<:Tails:1043603443689988096> Tails <:Tails:1043603443689988096>']
 #Logging
@@ -85,8 +96,21 @@ with open('config/config.json') as f:
   for c in data['botConfig']:
         print('Prefix: ' + c['prefix'])
 #Define Bot
-bot = commands.Bot(command_prefix = c['prefix'],intents=discord.Intents.all(),status=discord.Status.idle,case_insensitive=True)
+#bot = commands.Bot(command_prefix = c['prefix'],intents=discord.Intents.all(),status=discord.Status.idle,case_insensitive=True)
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+bot = commands.Bot(command_prefix = c['prefix'],intents=intents,status=discord.Status.idle,case_insensitive=True)
 bot.remove_command('help')
+#Stats Posting
+poster = dbots.ClientPoster(bot, 'discord.py', api_keys = {
+    'top.gg': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEwNTExOTk0ODUxNjgwNjY2MTAiLCJib3QiOnRydWUsImlhdCI6MTY3NjMwNjkzNn0.FoalNHkLE8Al5DYWsmqyx2CteNF8rNdz5I8aZl9gElk',
+    'discord.bots.gg': 'eyJhbGciOiJIUzI1NiJ9.eyJhcGkiOnRydWUsImlkIjoiNzYzNDcxMDQ5ODk0NTI3MDA2IiwiaWF0IjoxNjc2MzA2ODc3fQ.yPCMYrhGpmaC5XDE_c1HfJxCOb6TZD7OU2Db5DGDxvc',
+    'discordbotlist.com': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0IjoxLCJpZCI6IjEwNTExOTk0ODUxNjgwNjY2MTAiLCJpYXQiOjE2NzYzMDcyODZ9.7Q6gK8u3IqSsQhkscJkTZAGjUjau5SnlYcgg0R70v8k'
+})
+@poster.event
+async def on_auto_post(response):
+    print('Auto-Post:', response)
 #Ptero Api
 api = PterodactylClient('https://panel.sillydev.co.uk', c['ptero_account_key'])
 #Load Server File
@@ -114,6 +138,14 @@ else:
     with open('config/admins.json', 'w') as f:
         json.dump(adminusers, f, indent=4)
 #------------------------------------------Bot Events-------------------------------------------------
+#Status Check Page
+async def statuswebsite():
+    while True:
+        PORT = 6020
+        handler = http.server.SimpleHTTPRequestHandler
+        with socketserver.TCPServer(("", PORT), handler) as httpd:
+            print("Status Server started at localhost:" + str(PORT))
+            httpd.serve_forever()
 #Auto Updating Status
 async def StatusChange():
     while True:
@@ -142,9 +174,13 @@ async def Webhooklogging(channel,message):
 async def on_ready():
     print(f'{bot.user} Is Now Online And Ready To Send Messages!')
     await bot.loop.create_task(StatusChange())
+    await poster.post()
+    # This posts to all lists every 30 minutes
+    poster.start_loop()
 #Event for when a message is sent
 @bot.event
 async def on_message(message):
+    cooldown = 10
     bannedusers = []
     possiblechannels = []
     adminz = []
@@ -172,7 +208,21 @@ async def on_message(message):
         else:
             if get_globalChat(message.guild.id, message.channel.id):
                 if not message.content.startswith('g!'):
-                    await sendAll(message)
+                    if message.author.id not in last_usage:
+                        last_usage[message.author.id] = 0
+                    elapsed_time = time.time() - last_usage[message.author.id]
+                    if elapsed_time < cooldown and message.author.id not in adminz:
+                        embed = discord.Embed(description="**Chill!**\r\n"
+                        f"Please wait {cooldown - elapsed_time:.2f} seconds before using global chat again!",
+                        color=0x2ecc71)
+                        await message.channel.send(embed=embed)
+                        await message.delete()
+                    elif message.author.id in adminz:
+                        last_usage[message.author.id] = time.time()
+                        await sendAll(message)
+                    else:
+                        last_usage[message.author.id] = time.time()
+                        await sendAll(message)
                 else:
                     await message.delete()
     else:
@@ -253,7 +303,6 @@ async def sendAll(message: Message):
 #System Message
 async def sendsystemmessage(systemmessage):
     conent = str(systemmessage)
-    print(systemmessage)
     de = pytz.timezone('Europe/London')
     embed = discord.Embed(description=conent, timestamp=datetime.now().astimezone(tz=de), color=0xe74c3c)
     embed.set_author(name="SYSTEM MESSAGE", icon_url="https://images-ext-1.discordapp.net/external/wkzBNe0CFnA8pCMJAkRUMQpc3i_wWJS07j9wezmMbnQ/%3Fwidth%3D670%26height%3D670/https/images-ext-2.discordapp.net/external/8lntiVCa9JwRxnqX6rxvWdEWWmwIiz5xFeTxmdRSydE/%253Fsize%253D1024/https/cdn.discordapp.com/avatars/1051199485168066610/d40794f36524ec9e9a4e723679d14d6d.png?width=603&height=603")
@@ -299,6 +348,29 @@ async def sendAllWelcome(ctx):
             if channel:
                 await channel.send(embed=embed)
     await ctx.message.delete()
+#Event for when someone sets up the bot with slash commands
+async def slashsendAllWelcome(interaction):
+    try :
+        footer_icon_url = interaction.guild.icon.url
+    except AttributeError:
+        footer_icon_url = "https://ia903204.us.archive.org/4/items/discordprofilepictures/discordgrey.png"
+    de = pytz.timezone('Europe/London')
+    embed = discord.Embed(
+        title=f"Welcome!",
+        description=f'Thank you {interaction.guild.name} for adding the bot!\nIf you experience any issues please join our support server!',
+        color=0x662a85,
+        timestamp=datetime.now().astimezone(tz=de))
+    embed.set_footer(text=f'{interaction.guild.name} | {interaction.guild.member_count} Members!',
+                     icon_url=f'{footer_icon_url}')
+    embed.set_thumbnail(url=footer_icon_url)
+    embed.add_field(name="** **", value=f"Silly Chat Is Now In {len(bot.guilds)} Servers!", inline=False)
+    embed.add_field(name="** **", value="`📌`[Support](https://discord.gg/3qvpkgWSbF)・`🤖`[Bot-Invite](https://discord.com/api/oauth2/authorize?client_id=1051199485168066610&permissions=8&scope=bot%20applications.commands)", inline=False)
+    for server in servers["servers"]:
+        guild: Guild = bot.get_guild(int(server["guildid"]))
+        if guild:
+            channel: TextChannel = guild.get_channel(int(server["channelid"]))
+            if channel:
+                await channel.send(embed=embed)
 def guild_exists(guildid):
     for server in servers['servers']:
         if int(server['guildid'] == int(guildid)):
@@ -363,6 +435,7 @@ class HelpMenu(discord.ui.View):
             description="**Prefix: g!**",
             color=discord.Color.random()
         )
+    embed.add_field(name="**g!rules**", value="Check the bot's rules", inline=False)
     embed.add_field(name="g!ping", value="Check the bot's ping", inline=False)
     embed.add_field(name="g!stats", value="Check the bot's stats!", inline=False)
     embed.add_field(name="g!invite", value="Invite me to your server!", inline=False)
@@ -408,6 +481,7 @@ class HelpMenu(discord.ui.View):
 #Help Command
 @bot.command()
 async def help(ctx):
+    await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!help')
     embed = discord.Embed(
             title="**Silly Chat**",
             description="**Prefix: g!**",
@@ -417,6 +491,21 @@ async def help(ctx):
     embed.set_thumbnail(url="https://images-ext-2.discordapp.net/external/8lntiVCa9JwRxnqX6rxvWdEWWmwIiz5xFeTxmdRSydE/%3Fsize%3D1024/https/cdn.discordapp.com/avatars/1051199485168066610/d40794f36524ec9e9a4e723679d14d6d.png?width=670&height=670")
     view = HelpMenu()
     await ctx.reply(embed=embed,view=view)
+#Rules Command
+@bot.command()
+async def rules(ctx):
+    await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!rules')
+    embed = discord.Embed(
+            title="**Silly Chat - Rules**",
+            color=discord.Color.blue()
+        )
+    embed.add_field(name="**1. Have respect**", value="You should always be friendly to other user of Silly Chat. We aim a nice and friendly community, not a toxic community.", inline=False)
+    embed.add_field(name="**2. No NSFW**", value="No sending NSFW at all. Doing so will get you banned with no Appeal!", inline=False)
+    embed.add_field(name="**3. Don't Spam**", value="Spamming is not just sending messages in quick repetition, but is also sending the same message over and over again, intentionally splitting sentences up into different messages.example: message 1: ``hi`` message 2: ``how`` message 3: ``are`` message 4: ``you?``!", inline=False)
+    embed.add_field(name="**4. Use Common Sense**", value="There are some common rules, that are not mentioned here, but it is the most logical thing to follow them. The easiest way to know them is to think for 2 seconds before sending messages.")
+    embed.set_footer(text="Thank You For Using Silly Chat!")
+    embed.set_thumbnail(url="https://images-ext-2.discordapp.net/external/8lntiVCa9JwRxnqX6rxvWdEWWmwIiz5xFeTxmdRSydE/%3Fsize%3D1024/https/cdn.discordapp.com/avatars/1051199485168066610/d40794f36524ec9e9a4e723679d14d6d.png?width=670&height=670")
+    await ctx.reply(embed=embed)
 #Set Global Command
 @bot.command()
 async def setGlobal(ctx):
@@ -429,7 +518,7 @@ async def setGlobal(ctx):
                 "invite": "null"
             }
             servers["servers"].append(server)
-            with open('servers.json', 'w') as f:
+            with open('config/servers.json', 'w') as f:
                 json.dump(servers, f, indent=4)
             embed = discord.Embed(title="**Welcome!**",
                                   description="Thank you for using our bot!"
@@ -453,7 +542,7 @@ async def removeGlobal(ctx):
             globalid = get_globalChat_id(ctx.guild.id)
             if globalid != -1:
                 servers["servers"].pop(globalid)
-                with open('servers.json', 'w') as f:
+                with open('config/servers.json', 'w') as f:
                     json.dump(servers, f, indent=4)
             embed = discord.Embed(title="**Goodbye!**",
                                   description="Sad to see you go! If you want to setup the bot again use"
@@ -493,7 +582,6 @@ async def meme(ctx):
             embed.set_footer(text=randfooter[random.randint(0, len(randfooter)-1)])
             await ctx.send(embed=embed)
 #Hitman Command
-deathoptions=["Instantly Died","Had death appear at their door","Had Death Occur","Fell of a cliff","got too bored","vanished","got shot in the head with a laser","got too comftorable around bears","got depression and gave up","ended up in hell","dissapeared","Jumped Off A Building","Died","Fell up a flight of stairs.","Thought a necular power plant was a good place to go on holiday","Liked Jazz","Became a musician","Ate McDonalds","Became an artist","Turned to the dark side","Liked limes for some reason","Became a meme","Got 360 NO SCOPED BY A FOUR YEAR OLD!","Tried to play fortnite mobile","Didn't die!","Didn't have death occur!"]
 @bot.command(aliases=['hitman'])
 async def kill(ctx, person : discord.Member = None):
     randfooter = ["Thank You for using Silly Chat!", "Did You Know? Silly Chat is open source on Github! g!github", "Did You Know? Silly Chat is owned by Gamer3514#7679!"]
@@ -572,7 +660,8 @@ async def tiktok(ctx):
 		await ctx.send(embed=embed)
 #Stats Command
 @bot.command(name='stats', aliases=['botstats'])
-async def stats(ctx):	
+async def stats(ctx):
+    usercount = len(list(filter(lambda m: m.bot == False, bot.users)))
     await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!stats')
     embed = discord.Embed(
         title = f'My Stats:',
@@ -580,6 +669,7 @@ async def stats(ctx):
     embed.add_field(name="Bot Owner", value="<@763471049894527006> (763471049894527006) Gamer3514#7679", inline=False)
     embed.add_field(name="Cpu Cores", value=multiprocessing.cpu_count(), inline=False)
     embed.add_field(name="Server Count", value=f"{len(bot.guilds)}", inline=False)
+    embed.add_field(name="User Count", value=f"{usercount}", inline=False)
     embed.add_field(name="Bot Latency", value=f"{round(bot.latency * 1000)}ms", inline=False)
     embed.add_field(name="Cpu Usage", value=f"{psutil.cpu_percent()}%", inline=False)
     embed.add_field(name="Memory Usage", value=f"{psutil.virtual_memory().percent}%", inline=False)
@@ -614,7 +704,6 @@ async def credits(ctx):
         color=0x662a85)
     embed.add_field(name="Gamer3514#7679", value="Bot Owner! Maintains the bot, made most systems!")  
     embed.add_field(name="ukcai#7121", value="Bot Developer & Moderator! Helped improve systems and made comamnds such as g!stats")
-    embed.add_field(name="AlpineVr#0001", value="Bot Moderator! Helps keep the chat SFW. Helped with slash commands and more!")
     await ctx.send(embed=embed)
 #Support Command
 @bot.command(name='support', aliases=['ss'])
@@ -643,15 +732,7 @@ async def cai(ctx):
 				description = f'<@967904098047381587> assisted in development of silly chat in multiple ways! He helped by suggesting loads of new features and helped with commands such as g!stats command. You can find his website [here!](https://ukcai.me) Very cool!',
 				color=0x662a85)
 		await ctx.send(embed=embed)
-#Alpine Command
-@bot.command(name='alpine', aliases=['alpinevr'])
-async def alpine(ctx):
-		await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!alpine')
-		embed = discord.Embed(
-				title = f'AlpineVR',
-				description = f'<@675589895137394705>  is pretty awesome and helps moderate this bot. He also owns a bot: [Studio](https://studiobot.xyz/)',
-				color=0x662a85)
-		await ctx.send(embed=embed)
+
 #------------------------------------------ Prefix Bot Commands (Bot Mod)-------------------------------------------------
 #Dm Command
 @bot.command(name='dm', aliases=['dmuser'])
@@ -695,7 +776,7 @@ async def ban(ctx, user: discord.User = None):
                 "userid": user.id
                 }
             banned["banned"].append(banned2)
-            with open('banned.json', 'w') as f:
+            with open('config/banned.json', 'w') as f:
                 json.dump(banned, f, indent=4)
             embed=discord.Embed(title="Banned!",color=0x662a85)
             dmembed = discord.Embed(title="You Have Been Banned From Silly Chat!",color=0x662a85)
@@ -724,7 +805,7 @@ async def unban(ctx, user: discord.User = None):
         if user.id in currentbanned:
             userid = get_banned_id(user.id)
             banned["banned"].pop(userid)
-            with open('banned.json', 'w') as f:
+            with open('config/banned.json', 'w') as f:
                 json.dump(banned, f, indent=4)
             embed=discord.Embed(title="Unbanned!",color=0x662a85)
             dmembed = discord.Embed(title="You Have Been Unbanned From Silly Chat!",color=0x662a85)
@@ -921,7 +1002,6 @@ async def slashcredits(interaction):
         color=0x662a85)
     embed.add_field(name="Gamer3514#7679", value="Bot Owner! Maintains the bot, made most systems!")  
     embed.add_field(name="ukcai#7121", value="Bot Developer & Moderator! Helped improve systems and made comamnds such as g!stats")
-    embed.add_field(name="AlpineVr#0001", value="Bot Moderator! Helps keep the chat SFW. Helped with slash commands and more!")
     await interaction.response.send_message(embed=embed)
 #Slash Github Command
 @bot.tree.command(name="github", description="View Bot Source!")
@@ -943,13 +1023,15 @@ async def slashvote(interaction):
     await interaction.response.send_message(embed=embed)
 #Slash Stats Command
 @bot.tree.command(name="stats", description="View Bot Stats!")
-async def slashstats(interaction):	
+async def slashstats(interaction):
+    usercount = len(list(filter(lambda m: m.bot == False, bot.users)))
     embed = discord.Embed(
         title = f'My Stats:',
         color=0x662a85)
     embed.add_field(name="Bot Owner", value="<@763471049894527006> (763471049894527006) Gamer3514#7679", inline=False)
     embed.add_field(name="Cpu Cores", value=multiprocessing.cpu_count(), inline=False)
     embed.add_field(name="Server Count", value=f"{len(bot.guilds)}", inline=False)
+    embed.add_field(name="User Count", value=f"{usercount}", inline=False)
     embed.add_field(name="Bot Latency", value=f"{round(bot.latency * 1000)}ms", inline=False)
     embed.add_field(name="Cpu Usage", value=f"{psutil.cpu_percent()}%", inline=False)
     embed.add_field(name="Memory Usage", value=f"{psutil.virtual_memory().percent}%", inline=False)
@@ -986,7 +1068,7 @@ async def slashinvite(interaction):
     await interaction.response.send_message(embed=embed)
 #Slash Help Command
 @bot.tree.command(name="help", description="Get Bot Help!")
-async def help(interaction):
+async def slashhelp(interaction):
     embed = discord.Embed(
             title="**Silly Chat**",
             description="**Prefix: g!**",
@@ -996,5 +1078,77 @@ async def help(interaction):
     embed.set_thumbnail(url="https://images-ext-2.discordapp.net/external/8lntiVCa9JwRxnqX6rxvWdEWWmwIiz5xFeTxmdRSydE/%3Fsize%3D1024/https/cdn.discordapp.com/avatars/1051199485168066610/d40794f36524ec9e9a4e723679d14d6d.png?width=670&height=670")
     view = HelpMenu()
     await interaction.response.send_message(embed=embed,view=view)
+#SLash Ai Command
+@bot.tree.command(name="ai", description="Talk To Darren!!")
+async def slashSetGlobal(interaction, prompt: str):
+    async with aiohttp.ClientSession() as session:
+        randfooter = ["Thank You for using Silly Chat!", "Did You Know? Darren was originally just a seperate bot but now its here aswell!", "Did You Know? Silly Chat is open source on Github! g!github", "Did You Know? Silly Chat is owned by Gamer3514#7679!"]
+        uid = interaction.user.id
+        async with session.get(f"http://api.brainshop.ai/get?bid={c['bid']}&key={c['key']}&uid={uid}&msg={prompt}") as resp:
+            responce = await resp.json()
+            embed = discord.Embed(title="Darren Has Spoken!", description=responce["cnt"])
+            embed.set_footer(text=randfooter[random.randint(0, len(randfooter)-1)])
+            await interaction.response.send_message(embed=embed)
+#------------------------------------------Slash Bot Commands (Server Admin)-------------------------------------------------
+#Slash Set Global Command
+@bot.tree.command(name="setglobal", description="Setup Silly Chat!")
+async def slashSetGlobal(interaction, channel: discord.TextChannel):
+    if interaction.user.guild_permissions.administrator:
+        if not guild_exists(interaction.guild.id):
+            channel = channel.id
+            server = {
+                "guildid": interaction.guild.id,
+                "channelid": channel,
+                "invite": "null"
+            }
+            servers["servers"].append(server)
+            with open('config/servers.json', 'w') as f:
+                json.dump(servers, f, indent=4)
+            print(channel)
+            embed = discord.Embed(title="**Welcome!**",
+                                  description="Thank you for using our bot!"
+                                              " Messages will now be sent and recieved!"
+                                              " Have fun!",
+                                  color=0x2ecc71)
+            embed.set_footer(text="To reduce the chances of your user's being banned, please set a slowmode of atleast 5 seconds!")
+            await interaction.response.send_message(embed=embed)
+            await slashsendAllWelcome(interaction)
+        else:
+            embed = discord.Embed(description="You have already setup the bot!\r\n"
+                                              "To setup the bot again do `g!removeGlobal` then run this command again!",
+                                  color=0x2ecc71)
+            await interaction.response.send_message(embed=embed)
+    else:
+        embed = discord.Embed(
+            title = f'Error!',
+            description = "You are not permitted to use this command! You require ``Administrator`` permissions to run this.",
+            color=0x662a85)
+        await interaction.response.send_message(embed=embed)
+#Slash Remove Global Command
+@bot.tree.command(name="removeglobal", description="Remove Global Setup!")
+async def slashRemoveGlobal(interaction):
+    if interaction.user.guild_permissions.administrator:
+        if guild_exists(interaction.guild.id):
+            globalid = get_globalChat_id(interaction.guild.id)
+            if globalid != -1:
+                servers["servers"].pop(globalid)
+                with open('config/servers.json', 'w') as f:
+                    json.dump(servers, f, indent=4)
+            embed = discord.Embed(title="**Goodbye!**",
+                                  description="Sad to see you go! If you want to setup the bot again use"
+                                              " `g!setGlobal`!",
+                                  color=0x2ecc71)
+            await interaction.response.send_message(embed=embed)
+        else:
+            embed = discord.Embed(description="No Global Channel Set.\r\n"
+                                              "Use `g!setGlobal` to set one!\nBelieve this is a mistake? Join our support server!",
+                                  color=0x2ecc71)
+            await interaction.response.send_message(embed=embed)
+    else:
+        embed = discord.Embed(
+            title = f'Error!',
+            description = "You are not permitted to use this command! You require ``Administrator`` permissions to run this.",
+            color=0x662a85)
+        await interaction.response.send_message(embed=embed)
 #Start the bot!
 bot.run(c['token'], log_handler=handler, log_level=logging.ERROR)
