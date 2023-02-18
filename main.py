@@ -122,15 +122,17 @@ async def StatusChange():
         await asyncio.sleep(35)
         await bot.change_presence(activity=discord.Game(f'g!help | {usercount} Users'))
         await asyncio.sleep(35)
-        await bot.change_presence(activity=discord.Game(f'g!help | discord.gg/3qvpkgWSbF'))
+        await bot.change_presence(
+            activity=discord.Game('g!help | discord.gg/3qvpkgWSbF')
+        )
         await asyncio.sleep(35)
-        await bot.change_presence(activity=discord.Game(f'g!help | Invite Me Today!'))
+        await bot.change_presence(activity=discord.Game('g!help | Invite Me Today!'))
         await asyncio.sleep(35)
-        await bot.change_presence(activity=discord.Game(f'g!help | Silly Chat'))
+        await bot.change_presence(activity=discord.Game('g!help | Silly Chat'))
         await asyncio.sleep(35)
-        await bot.change_presence(activity=discord.Game(f'g!help | Downloading 2024'))
+        await bot.change_presence(activity=discord.Game('g!help | Downloading 2024'))
         await asyncio.sleep(35)
-        await bot.change_presence(activity=discord.Game(f'g!help | Gamer3514#7679'))
+        await bot.change_presence(activity=discord.Game('g!help | Gamer3514#7679'))
         await asyncio.sleep(35)
 #Webhook Logging
 async def Webhooklogging(channel,message):
@@ -145,23 +147,19 @@ async def on_ready():
 #Event for when a message is sent
 @bot.event
 async def on_message(message):
-    bannedusers = []
-    possiblechannels = []
-    adminz = []
     staffonly = False
-    for admin in adminusers["admins"]:
-        adminz.append(int(admin["userid"]))
-    for buser in banned["banned"]:
-        bannedusers.append(int(buser["userid"]))
-    for channel in servers["servers"]:
-        possiblechannels.append(int(channel["channelid"]))
+    adminz = [int(admin["userid"]) for admin in adminusers["admins"]]
+    bannedusers = [int(buser["userid"]) for buser in banned["banned"]]
+    possiblechannels = [
+        int(channel["channelid"]) for channel in servers["servers"]
+    ]
     if message.author.bot:
         return
-    if staffonly == True and message.author.id in adminz:
+    if staffonly and message.author.id in adminz:
         print("User = Staff, Sending!")
         if get_globalChat(message.guild.id, message.channel.id):
             await sendAll(message)
-    elif staffonly == False:
+    elif not staffonly:
         if message.author.id in bannedusers and message.channel.id in possiblechannels:
             user = message.author
             embed = discord.Embed(description="**You Are Bannned!**\r\n"
@@ -169,12 +167,11 @@ async def on_message(message):
             color=0x2ecc71)
             await user.send(embed=embed)
             await message.delete()
-        else:
-            if get_globalChat(message.guild.id, message.channel.id):
-                if not message.content.startswith('g!'):
-                    await sendAll(message)
-                else:
-                    await message.delete()
+        elif get_globalChat(message.guild.id, message.channel.id):
+            if message.content.startswith('g!'):
+                await message.delete()
+            else:
+                await sendAll(message)
     else:
         user = message.author
         embed = discord.Embed(description="**Silly Chat Is Locked!**\r\n"
@@ -186,20 +183,15 @@ async def on_message(message):
 #Send All Message
 async def sendAll(message: Message):
     await Webhooklogging(c['webhook'],f'Message "{message.content}" was sent by "{message.author.id}" in guild {message.guild.id}!')
-    adminz = []
-    for admin in adminusers["admins"]:
-        adminz.append(int(admin["userid"]))
-    if message.author.id in adminz:
-        role = "Bot Moderator"
-    else:
-        role = "Member"
+    adminz = [int(admin["userid"]) for admin in adminusers["admins"]]
+    role = "Bot Moderator" if message.author.id in adminz else "Member"
     conent = message.content
     author = message.author
     attachments = message.attachments
     de = pytz.timezone('Europe/London')
     embed = discord.Embed(description=conent, timestamp=datetime.now().astimezone(tz=de), color=author.color)
     icon = message.author.avatar.url
-    username = author.name + "#" + author.discriminator + " - " + role
+    username = f"{author.name}#{author.discriminator} - {role}"
     embed.set_author(name=username, icon_url=icon)
     try :
         footer_icon_url = message.guild.icon.url
@@ -225,28 +217,27 @@ async def sendAll(message: Message):
             score = result['google']['nsfw_likelihood']
             score2 = int(score)
     for server in servers["servers"]:
-        guild: Guild = bot.get_guild(int(server["guildid"]))
-        if guild:
-            channel: TextChannel = guild.get_channel(int(server["channelid"]))
-            if channel:
+        if guild := bot.get_guild(int(server["guildid"])):
+            if channel := guild.get_channel(int(server["channelid"])):
                 perms: Permissions = channel.permissions_for(guild.get_member(bot.user.id))
                 if perms.send_messages:
                     if perms.embed_links and perms.attach_files and perms.external_emojis:
-                            try:
-                                if score2 == 3 or score2 == 4 or score2 == 5:
-                                    await message.delete()
-                                    user = message.author
-                                    embed = discord.Embed(
-                                        title=f"NSFW Detected!",
-                                        description=f"Our Systems Have Detected NSFW In Your Image!\nIf you believe this is a mistake please contact our support.",
-                                        color=0x662a85)
-                                    await user.send(embed=embed)
-                                else:
-                                    file = discord.File(f"temp/{randomname}.png", filename=f"{randomname}.png")
-                                    embed.set_image(url=f"attachment://{randomname}.png")
-                                    await channel.send(file=file, embed=embed)
-                            except UnboundLocalError:
-                                await channel.send(embed=embed)
+                        try:
+                            if score2 in [3, 4, 5]:
+                                await message.delete()
+                                user = message.author
+                                embed = discord.Embed(
+                                    title="NSFW Detected!",
+                                    description=f"Our Systems Have Detected NSFW In Your Image!\nIf you believe this is a mistake please contact our support.",
+                                    color=0x662A85,
+                                )
+                                await user.send(embed=embed)
+                            else:
+                                file = discord.File(f"temp/{randomname}.png", filename=f"{randomname}.png")
+                                embed.set_image(url=f"attachment://{randomname}.png")
+                                await channel.send(file=file, embed=embed)
+                        except UnboundLocalError:
+                            await channel.send(embed=embed)
                     else:
                         await channel.send('ERROR: I seem to be missing required permissions! I require ``Embed Links``, ``Attach Files`` and ``External Emojis``')
     await message.delete()
@@ -260,10 +251,8 @@ async def sendsystemmessage(systemmessage):
     embed.set_thumbnail(url="https://images-ext-1.discordapp.net/external/wkzBNe0CFnA8pCMJAkRUMQpc3i_wWJS07j9wezmMbnQ/%3Fwidth%3D670%26height%3D670/https/images-ext-2.discordapp.net/external/8lntiVCa9JwRxnqX6rxvWdEWWmwIiz5xFeTxmdRSydE/%253Fsize%253D1024/https/cdn.discordapp.com/avatars/1051199485168066610/d40794f36524ec9e9a4e723679d14d6d.png?width=603&height=603")
     embed.add_field(name="** **", value="`📌`[Support](https://discord.gg/3qvpkgWSbF)・`🤖`[Bot-Invite](https://discord.com/api/oauth2/authorize?client_id=1051199485168066610&permissions=8&scope=bot%20applications.commands)", inline=False)
     for server in servers["servers"]:
-        guild: Guild = bot.get_guild(int(server["guildid"]))
-        if guild:
-            channel: TextChannel = guild.get_channel(int(server["channelid"]))
-            if channel:
+        if guild := bot.get_guild(int(server["guildid"])):
+            if channel := guild.get_channel(int(server["channelid"])):
                 perms: Permissions = channel.permissions_for(guild.get_member(bot.user.id))
                 if perms.send_messages:
                     if perms.embed_links and perms.attach_files and perms.external_emojis:
@@ -273,8 +262,7 @@ async def sendsystemmessage(systemmessage):
 #Gen Random String
 async def get_random_string(length):
     letters = string.ascii_lowercase
-    result_str = ''.join(random.choice(letters) for i in range(length))
-    return result_str
+    return ''.join(random.choice(letters) for _ in range(length))
 #Event for when someone sets up the bot
 async def sendAllWelcome(ctx):
     try :
@@ -283,27 +271,25 @@ async def sendAllWelcome(ctx):
         footer_icon_url = "https://ia903204.us.archive.org/4/items/discordprofilepictures/discordgrey.png"
     de = pytz.timezone('Europe/London')
     embed = discord.Embed(
-        title=f"Welcome!",
+        title="Welcome!",
         description=f'Thank you {ctx.guild.name} for adding the bot!\nIf you experience any issues please join our support server!',
-        color=0x662a85,
-        timestamp=datetime.now().astimezone(tz=de))
+        color=0x662A85,
+        timestamp=datetime.now().astimezone(tz=de),
+    )
     embed.set_footer(text=f'{ctx.guild.name} | {ctx.guild.member_count} Members!',
                      icon_url=f'{footer_icon_url}')
     embed.set_thumbnail(url=footer_icon_url)
     embed.add_field(name="** **", value=f"Silly Chat Is Now In {len(bot.guilds)} Servers!", inline=False)
     embed.add_field(name="** **", value="`📌`[Support](https://discord.gg/3qvpkgWSbF)・`🤖`[Bot-Invite](https://discord.com/api/oauth2/authorize?client_id=1051199485168066610&permissions=8&scope=bot%20applications.commands)", inline=False)
     for server in servers["servers"]:
-        guild: Guild = bot.get_guild(int(server["guildid"]))
-        if guild:
-            channel: TextChannel = guild.get_channel(int(server["channelid"]))
-            if channel:
+        if guild := bot.get_guild(int(server["guildid"])):
+            if channel := guild.get_channel(int(server["channelid"])):
                 await channel.send(embed=embed)
     await ctx.message.delete()
 def guild_exists(guildid):
-    for server in servers['servers']:
-        if int(server['guildid'] == int(guildid)):
-            return True
-    return False
+    return any(
+        int(server['guildid'] == int(guildid)) for server in servers['servers']
+    )
 def get_globalChat(guild_id, channelid=None):
     globalChat = None
     for server in servers["servers"]:
@@ -316,19 +302,15 @@ def get_globalChat(guild_id, channelid=None):
     return globalChat
 def get_globalChat_id(guild_id):
     globalChat = -1
-    i = 0
-    for server in servers["servers"]:
+    for i, server in enumerate(servers["servers"]):
         if int(server["guildid"]) == int(guild_id):
             globalChat = i
-        i += 1
     return globalChat
 def get_banned_id(user_id):
     globalChat = -1
-    i = 0
-    for bannedusr in banned["banned"]:
+    for i, bannedusr in enumerate(banned["banned"]):
         if int(bannedusr["userid"]) == int(user_id):
             globalChat = i
-        i += 1
     return globalChat
 #Bot join event
 @bot.event
@@ -459,12 +441,12 @@ async def removeGlobal(ctx):
                                   description="Sad to see you go! If you want to setup the bot again use"
                                               " `g!setGlobal`!",
                                   color=0x2ecc71)
-            await ctx.send(embed=embed)
         else:
             embed = discord.Embed(description="No Global Channel Set.\r\n"
                                               "Use `g!setGlobal` to set one!\nBelieve this is a mistake? Join our support server!",
                                   color=0x2ecc71)
-            await ctx.send(embed=embed)
+
+        await ctx.send(embed=embed)
 #Coin Flip Command
 @bot.command(aliases=['headsortails'])
 async def coinflip(ctx):
@@ -485,7 +467,7 @@ async def joke(ctx):
 @bot.command(aliases=['genmeme'])
 async def meme(ctx):
     async with aiohttp.ClientSession() as session:
-        async with session.get(f"https://meme-api.com/gimme") as resp:
+        async with session.get("https://meme-api.com/gimme") as resp:
             data = await resp.json()
             embed = discord.Embed(title=f"Meme Generated! - {data['title']}",color=discord.Color.random())
             embed.set_image(url=f"{data['url']}")
@@ -501,22 +483,25 @@ async def kill(ctx, person : discord.Member = None):
             embed=discord.Embed(title="No User Selected", description="Correct Usage:\ng!kill @user\ng!hitman userid", color=0xFCBA03)
             embed.set_footer(text=randfooter[random.randint(0, len(randfooter)-1)])
             await ctx.send(embed=embed)
-    embed = discord.Embed(title=f"DEAD!", description=f"{person.mention} {random.choice(deathoptions)}")
+    embed = discord.Embed(
+        title="DEAD!",
+        description=f"{person.mention} {random.choice(deathoptions)}",
+    )
     embed.set_footer(text=randfooter[random.randint(0, len(randfooter)-1)])
     await ctx.send(embed=embed)
 #Rock Command
 @bot.command(aliases=['genrock'])
 async def rock(ctx):
-  async with aiohttp.ClientSession() as session:
-    async with session.get("https://rockapi.apiworks.tech/rock/random") as api:
-      data = await api.json()
-      rok_name = data["name"]
-      rok_desc = data["description"]
-      rok_img = data["image"]
-      embed = discord.Embed(title=rok_name, description=rok_desc)
-      if not rok_img == "none":
-        embed.set_image(url=rok_img)
-      await ctx.send(embed=embed)
+    async with aiohttp.ClientSession() as session:
+        async with session.get("https://rockapi.apiworks.tech/rock/random") as api:
+            data = await api.json()
+            rok_name = data["name"]
+            rok_desc = data["description"]
+            rok_img = data["image"]
+            embed = discord.Embed(title=rok_name, description=rok_desc)
+            if rok_img != "none":
+                embed.set_image(url=rok_img)
+            await ctx.send(embed=embed)
 #Ai Command
 @bot.command()
 async def ai(ctx, *, prompt: str):
@@ -548,35 +533,34 @@ async def avatar(ctx,  member: discord.Member = None):
 async def ping(ctx):
     await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!ping')
     embed = discord.Embed(
-        title = f'Pong!',
-        description = f'**{round(bot.latency * 1000)}ms**',
-        color=0x662a85)
+        title='Pong!',
+        description=f'**{round(bot.latency * 1000)}ms**',
+        color=0x662A85,
+    )
     await ctx.send(embed=embed)
 #Youtube Command
 @bot.command(name='youtube', aliases=['yt'])
 async def youtube(ctx):
-		await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!youtube')
-		embed = discord.Embed(
-				title = f'Subscribe On Youtube!',
-				description = f'[Here!](https://youtube.com/c/thegamer3514)',
-				color=0x662a85)
-		await ctx.send(embed=embed)
+    await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!youtube')
+    embed = discord.Embed(
+        title='Subscribe On Youtube!',
+        description='[Here!](https://youtube.com/c/thegamer3514)',
+        color=0x662A85,
+    )
+    await ctx.send(embed=embed)
 #TikTok Command
 @bot.command(name='tiktok', aliases=['tk'])
 async def tiktok(ctx):
-		await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!tiktok')
-		embed = discord.Embed(
-				title = f'Follow On Tiktok!',
-				description = f'@elon_fan.1',
-				color=0x662a85)
-		await ctx.send(embed=embed)
+    await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!tiktok')
+    embed = discord.Embed(
+        title='Follow On Tiktok!', description='@elon_fan.1', color=0x662A85
+    )
+    await ctx.send(embed=embed)
 #Stats Command
 @bot.command(name='stats', aliases=['botstats'])
 async def stats(ctx):	
     await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!stats')
-    embed = discord.Embed(
-        title = f'My Stats:',
-        color=0x662a85)
+    embed = discord.Embed(title='My Stats:', color=0x662a85)
     embed.add_field(name="Bot Owner", value="<@763471049894527006> (763471049894527006) Gamer3514#7679", inline=False)
     embed.add_field(name="Cpu Cores", value=multiprocessing.cpu_count(), inline=False)
     embed.add_field(name="Server Count", value=f"{len(bot.guilds)}", inline=False)
@@ -589,9 +573,7 @@ async def stats(ctx):
 @bot.command(name='botlists', aliases=['vote'])
 async def botlists(ctx):	
     await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!botlists')
-    embed = discord.Embed(
-        title = f'Vote For Me!',
-        color=0x662a85)
+    embed = discord.Embed(title='Vote For Me!', color=0x662a85)
     embed.add_field(name="Top.gg", value="[Vote Here!](https://top.gg/bot/1051199485168066610)", inline=True)
     embed.add_field(name="Spectrum Lists", value="[Vote Here!](https://spectrumlists.xyz/bot/1051199485168066610)", inline=True)
     embed.add_field(name="Discord Bot List", value="[Vote Here!](https://discordbotlist.com/bots/silly-chat)", inline=True)
@@ -621,74 +603,70 @@ async def credits(ctx):
 async def support(ctx):
     await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!support')
     embed = discord.Embed(
-        title = f'<a:discord:942344157618405416> Do you need support? Join our support server! <a:discord:942344157618405416>',
-        description = '**[Support server](https://discord.gg/3qvpkgWSbF)**',
-        color=0x662a85)
+        title='<a:discord:942344157618405416> Do you need support? Join our support server! <a:discord:942344157618405416>',
+        description='**[Support server](https://discord.gg/3qvpkgWSbF)**',
+        color=0x662A85,
+    )
     await ctx.send(embed=embed)
 #Gamer Command
 @bot.command(name='gamer', aliases=['gamer3514'])
 async def gamer(ctx):
-		await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!gamer')
-		embed = discord.Embed(
-				title = f'Gamer Is Cool!',
-				description = f'<@763471049894527006> is a super cool human! He is cracked at fortnite and he made this bot!',
-				color=0x662a85)
-		await ctx.send(embed=embed)
+    await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!gamer')
+    embed = discord.Embed(
+        title='Gamer Is Cool!',
+        description='<@763471049894527006> is a super cool human! He is cracked at fortnite and he made this bot!',
+        color=0x662A85,
+    )
+    await ctx.send(embed=embed)
 #Cai Command
 @bot.command(name='cai', aliases=['ukcai'])
 async def cai(ctx):
-		await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!cai')
-		embed = discord.Embed(
-				title = f'Ukcai',
-				description = f'<@967904098047381587> assisted in development of silly chat in multiple ways! He helped by suggesting loads of new features and helped with commands such as g!stats command. You can find his website [here!](https://ukcai.me) Very cool!',
-				color=0x662a85)
-		await ctx.send(embed=embed)
+    await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!cai')
+    embed = discord.Embed(
+        title='Ukcai',
+        description='<@967904098047381587> assisted in development of silly chat in multiple ways! He helped by suggesting loads of new features and helped with commands such as g!stats command. You can find his website [here!](https://ukcai.me) Very cool!',
+        color=0x662A85,
+    )
+    await ctx.send(embed=embed)
 #Alpine Command
 @bot.command(name='alpine', aliases=['alpinevr'])
 async def alpine(ctx):
-		await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!alpine')
-		embed = discord.Embed(
-				title = f'AlpineVR',
-				description = f'<@675589895137394705>  is pretty awesome and helps moderate this bot. He also owns a bot: [Studio](https://studiobot.xyz/)',
-				color=0x662a85)
-		await ctx.send(embed=embed)
+    await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!alpine')
+    embed = discord.Embed(
+        title='AlpineVR',
+        description='<@675589895137394705>  is pretty awesome and helps moderate this bot. He also owns a bot: [Studio](https://studiobot.xyz/)',
+        color=0x662A85,
+    )
+    await ctx.send(embed=embed)
 #------------------------------------------ Prefix Bot Commands (Bot Mod)-------------------------------------------------
 #Dm Command
 @bot.command(name='dm', aliases=['dmuser'])
 async def dm(ctx, user: discord.User = None, *, value=None):
     await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!dm {user} {value}')
-    adminz = []
-    for admin in adminusers["admins"]:
-        adminz.append(int(admin["userid"]))
+    adminz = [int(admin["userid"]) for admin in adminusers["admins"]]
     if ctx.message.author.id in adminz:
         if user == ctx.message.author:
             await user.send("**You can't DM yourself, or maybe you can?**")
-            await ctx.message.delete()
-        else:
-            await ctx.message.delete()
-        if user == None:
+        await ctx.message.delete()
+        if user is None:
             await ctx.send(f'**{ctx.message.author},** Please mention somebody to DM.')
+        elif value is None:
+            await ctx.send(f'**{ctx.message.author},** Please send a message to DM.')
         else:
-            if value == None:
-                    await ctx.send(f'**{ctx.message.author},** Please send a message to DM.')
-            else:
-                await user.send(value)
+            await user.send(value)
     else:
         embed = discord.Embed(
-            title = f'Error!',
-            description = "You are not permitted to use this command!",
-            color=0x662a85)
+            title='Error!',
+            description="You are not permitted to use this command!",
+            color=0x662A85,
+        )
         await ctx.send(embed=embed)
 #Ban Command
 @bot.command()
 async def ban(ctx, user: discord.User = None):
     await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!ban {user}')
-    adminz = []
-    currentbanned = []
-    for buser in banned["banned"]:
-        currentbanned.append(buser["userid"])
-    for admin in adminusers["admins"]:
-        adminz.append(int(admin["userid"]))
+    currentbanned = [buser["userid"] for buser in banned["banned"]]
+    adminz = [int(admin["userid"]) for admin in adminusers["admins"]]
     if ctx.message.author.id in adminz and ctx.message.author.id not in currentbanned:
         if user.id not in currentbanned:
             banned2 = {
@@ -700,26 +678,22 @@ async def ban(ctx, user: discord.User = None):
             embed=discord.Embed(title="Banned!",color=0x662a85)
             dmembed = discord.Embed(title="You Have Been Banned From Silly Chat!",color=0x662a85)
             await user.send(embed=dmembed)
-            await ctx.send(embed=embed)
         else:
             embed=discord.Embed(title="User Is Already Banned!",color=0x662a85)
-            await ctx.send(embed=embed)
     else:
         embed = discord.Embed(
-            title = f'Error!',
-            description = "You are not permitted to use this command!",
-            color=0x662a85)
-        await ctx.send(embed=embed)
+            title='Error!',
+            description="You are not permitted to use this command!",
+            color=0x662A85,
+        )
+
+    await ctx.send(embed=embed)
 #Unban Command
 @bot.command()
 async def unban(ctx, user: discord.User = None):
     await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!unban {user}')
-    adminz = []
-    currentbanned = []
-    for buser in banned["banned"]:
-        currentbanned.append(buser["userid"])
-    for admin in adminusers["admins"]:
-        adminz.append(int(admin["userid"]))
+    currentbanned = [buser["userid"] for buser in banned["banned"]]
+    adminz = [int(admin["userid"]) for admin in adminusers["admins"]]
     if ctx.message.author.id in adminz and ctx.message.author.id not in currentbanned:
         if user.id in currentbanned:
             userid = get_banned_id(user.id)
@@ -729,23 +703,21 @@ async def unban(ctx, user: discord.User = None):
             embed=discord.Embed(title="Unbanned!",color=0x662a85)
             dmembed = discord.Embed(title="You Have Been Unbanned From Silly Chat!",color=0x662a85)
             await user.send(embed=dmembed)
-            await ctx.send(embed=embed)
         else:
             embed=discord.Embed(title="User Is Not Banned!",color=0x662a85)
-            await ctx.send(embed=embed)
     else:
         embed = discord.Embed(
-            title = f'Error!',
-            description = "You are not permitted to use this command!",
-            color=0x662a85)
-        await ctx.send(embed=embed)
+            title='Error!',
+            description="You are not permitted to use this command!",
+            color=0x662A85,
+        )
+
+    await ctx.send(embed=embed)
 #Scan Image Command
 @bot.command()
 async def scanimage(ctx):
     await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!scanimage')
-    adminz = []
-    for admin in adminusers["admins"]:
-        adminz.append(int(admin["userid"]))
+    adminz = [int(admin["userid"]) for admin in adminusers["admins"]]
     if ctx.message.author.id in adminz:
         attachments = ctx.message.attachments
         if len(attachments) > 0:
@@ -760,22 +732,24 @@ async def scanimage(ctx):
             response = requests.post(url, data=data, files=files, headers=headers)
             result = json.loads(response.text)
             embed = discord.Embed(
-            title = f'Image Scanned!',
-            description = f"Nsfw Rating: {result['google']['nsfw_likelihood']}",
-            color=0x662a85)
-            await ctx.send(embed=embed)
+                title='Image Scanned!',
+                description=f"Nsfw Rating: {result['google']['nsfw_likelihood']}",
+                color=0x662A85,
+            )
         else:
             embed = discord.Embed(
-            title = f'Error!',
-            description = "You have not provided an image to scan!",
-            color=0x662a85)
-            await ctx.send(embed=embed)
+                title='Error!',
+                description="You have not provided an image to scan!",
+                color=0x662A85,
+            )
     else:
         embed = discord.Embed(
-            title = f'Error!',
-            description = "You are not permitted to use this command!",
-            color=0x662a85)
-        await ctx.send(embed=embed)
+            title='Error!',
+            description="You are not permitted to use this command!",
+            color=0x662A85,
+        )
+
+    await ctx.send(embed=embed)
 #------------------------------------------ Prefix Bot Commands (Owner)-------------------------------------------------
 #Sync Slash Commands Command
 @bot.command()
@@ -786,18 +760,17 @@ async def sync(ctx):
         await ctx.send(f"Synced {len(fmt)} commands")
     else:
         embed = discord.Embed(
-            title = f'Error!',
-            description = "You are not permitted to use this command!",
-            color=0x662a85)
+            title='Error!',
+            description="You are not permitted to use this command!",
+            color=0x662A85,
+        )
         await ctx.send(embed=embed)
 #Update User Command
 @bot.command()
 async def updateuser(ctx, user: discord.User = None):
     await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!updateuser {user}')
-    adminz = []
-    for admin in adminusers["admins"]:
-        adminz.append(int(admin["userid"]))
     if ctx.message.author.id == 763471049894527006:
+        adminz = [int(admin["userid"]) for admin in adminusers["admins"]]
         if user.id not in adminz:
             adminuserz = {
                 "userid": user.id
@@ -808,36 +781,34 @@ async def updateuser(ctx, user: discord.User = None):
             embed=discord.Embed(title="User Modified!",color=0x662a85)
             dmembed = discord.Embed(title="Your Role Has Been Changed!",color=0x662a85)
             await user.send(embed=dmembed)
-            await ctx.send(embed=embed)
         else:
             embed=discord.Embed(title="Removing Admins Coming Soon",color=0x662a85)
-            await ctx.send(embed=embed)
     else:
         embed = discord.Embed(
-            title = f'Error!',
-            description = "You are not permitted to use this command!",
-            color=0x662a85)
-        await ctx.send(embed=embed)
+            title='Error!',
+            description="You are not permitted to use this command!",
+            color=0x662A85,
+        )
+
+    await ctx.send(embed=embed)
 #Power Action Command
 #Delete From Here
 @bot.command()
 async def poweraction(ctx, value = None):
     await Webhooklogging(c['webhook'],f'{ctx.author} | {ctx.guild.id} -> g!poweraction {value}')
-    adminz = []
-    for admin in adminusers["admins"]:
-        adminz.append(int(admin["userid"]))
+    adminz = [int(admin["userid"]) for admin in adminusers["admins"]]
     if ctx.message.author.id == 763471049894527006:
         embed = discord.Embed(
-            title = f'Complete!',
-            description = "Power Action Sent!",
-            color=0x662a85)
+            title='Complete!', description="Power Action Sent!", color=0x662A85
+        )
         await ctx.send(embed=embed)
         api.client.servers.send_power_action(c['ptero_srv_id'], value)
     else:
         embed = discord.Embed(
-            title = f'Error!',
-            description = "You are not permitted to use this command!",
-            color=0x662a85)
+            title='Error!',
+            description="You are not permitted to use this command!",
+            color=0x662A85,
+        )
         await ctx.send(embed=embed)
 #To Here to remove the poweraction command (for people not using Pterodactyl Panel)
 #Database Command
@@ -852,9 +823,10 @@ async def database(ctx):
         for i in data['servers']:
             print(i)
             embed = discord.Embed(
-                title = f'DataBase Export! (Servers)',
-                description = i,
-                color=0x662a85)
+                title='DataBase Export! (Servers)',
+                description=i,
+                color=0x662A85,
+            )
             user = await bot.fetch_user("763471049894527006")
             await user.send(embed=embed)
             f.close()
@@ -863,9 +835,10 @@ async def database(ctx):
         for i in data['banned']:
             print(i)
             embed = discord.Embed(
-                title = f'DataBase Export! (Banned Users)',
-                description = i,
-                color=0x662a85)
+                title='DataBase Export! (Banned Users)',
+                description=i,
+                color=0x662A85,
+            )
             user = await bot.fetch_user("763471049894527006")
             await user.send(embed=embed)
             bannedE.close()
@@ -874,17 +847,19 @@ async def database(ctx):
         for i in data['admins']:
             print(i)
             embed = discord.Embed(
-                title = f'DataBase Export! (Admin Users)',
-                description = i,
-                color=0x662a85)
+                title='DataBase Export! (Admin Users)',
+                description=i,
+                color=0x662A85,
+            )
             user = await bot.fetch_user("763471049894527006")
             await user.send(embed=embed)
             adminz.close()
     else:
         embed = discord.Embed(
-            title = f'Error!',
-            description = "You are not permitted to use this command!",
-            color=0x662a85)
+            title='Error!',
+            description="You are not permitted to use this command!",
+            color=0x662A85,
+        )
         await ctx.send(embed=embed)
 #System Message Command
 @bot.command(name='systemmessage', aliases=['sendsystemmessage'])
@@ -894,24 +869,27 @@ async def systemmessage(ctx, message: str):
         print(message)
         await sendsystemmessage(message)
         embed = discord.Embed(
-            title = f'Complete!',
-            description = "Message Has Been Sent!",
-            color=0x662a85)
-        await ctx.send(embed=embed)
+            title='Complete!',
+            description="Message Has Been Sent!",
+            color=0x662A85,
+        )
     else:
         embed = discord.Embed(
-            title = f'Error!',
-            description = "You are not permitted to use this command!",
-            color=0x662a85)
-        await ctx.send(embed=embed)
+            title='Error!',
+            description="You are not permitted to use this command!",
+            color=0x662A85,
+        )
+
+    await ctx.send(embed=embed)
 #------------------------------------------Slash Bot Commands (User)-------------------------------------------------
 #Slash Support Command
 @bot.tree.command(name="support", description="Get Bot Support!")
 async def slashsupport(interaction):
     embed = discord.Embed(
-        title = f'<a:discord:942344157618405416> Do you need support? Join our support server! <a:discord:942344157618405416>',
-        description = '**[Support server](https://discord.gg/3qvpkgWSbF)**',
-        color=0x662a85)
+        title='<a:discord:942344157618405416> Do you need support? Join our support server! <a:discord:942344157618405416>',
+        description='**[Support server](https://discord.gg/3qvpkgWSbF)**',
+        color=0x662A85,
+    )
     await interaction.response.send_message(embed=embed)
 #Slash Credits Command
 @bot.tree.command(name="credits", description="View Bot Credits!")
@@ -934,9 +912,7 @@ async def slashgithub(interaction):
 #Slash Vote Command
 @bot.tree.command(name="vote", description="Vote For The Bot!")
 async def slashvote(interaction):	
-    embed = discord.Embed(
-        title = f'Vote For Me!',
-        color=0x662a85)
+    embed = discord.Embed(title='Vote For Me!', color=0x662a85)
     embed.add_field(name="Top.gg", value="[Vote Here!](https://top.gg/bot/1051199485168066610)", inline=True)
     embed.add_field(name="Spectrum Lists", value="[Vote Here!](https://spectrumlists.xyz/bot/1051199485168066610)", inline=True)
     embed.add_field(name="Discord Bot List", value="[Vote Here!](https://discordbotlist.com/bots/silly-chat)", inline=True)
@@ -944,9 +920,7 @@ async def slashvote(interaction):
 #Slash Stats Command
 @bot.tree.command(name="stats", description="View Bot Stats!")
 async def slashstats(interaction):	
-    embed = discord.Embed(
-        title = f'My Stats:',
-        color=0x662a85)
+    embed = discord.Embed(title='My Stats:', color=0x662a85)
     embed.add_field(name="Bot Owner", value="<@763471049894527006> (763471049894527006) Gamer3514#7679", inline=False)
     embed.add_field(name="Cpu Cores", value=multiprocessing.cpu_count(), inline=False)
     embed.add_field(name="Server Count", value=f"{len(bot.guilds)}", inline=False)
@@ -958,26 +932,27 @@ async def slashstats(interaction):
 #Slash TikTok Command
 @bot.tree.command(name="tiktok", description="Get A Link To Our TikTok!")
 async def slashtiktok(interaction):
-		embed = discord.Embed(
-				title = f'Follow Me On Tiktok!',
-				description = f'@elon_fan.1',
-				color=0x662a85)
-		await interaction.response.send_message(embed=embed)
+    embed = discord.Embed(
+        title='Follow Me On Tiktok!', description='@elon_fan.1', color=0x662A85
+    )
+    await interaction.response.send_message(embed=embed)
 #Slash Youtube Command
 @bot.tree.command(name="youtube", description="Get A Link To Our Youtube!")
 async def slashyoutube(interaction):
-		embed = discord.Embed(
-				title = f'Subscribe On Youtube!',
-				description = f'[Here!](https://youtube.com/c/thegamer3514)',
-				color=0x662a85)
-		await interaction.response.send_message(embed=embed)
+    embed = discord.Embed(
+        title='Subscribe On Youtube!',
+        description='[Here!](https://youtube.com/c/thegamer3514)',
+        color=0x662A85,
+    )
+    await interaction.response.send_message(embed=embed)
 #Slash Ping Command
 @bot.tree.command(name="ping", description="Get Bot Ping!")
 async def slashping(interaction):
     embed = discord.Embed(
-        title = f'Pong!',
-        description = f'**{round(bot.latency * 1000)}ms**',
-        color=0x662a85)
+        title='Pong!',
+        description=f'**{round(bot.latency * 1000)}ms**',
+        color=0x662A85,
+    )
     await interaction.response.send_message(embed=embed)
 #Slash Invite Command
 @bot.tree.command(name="invite", description="Invite The Bot!")
