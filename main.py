@@ -48,13 +48,6 @@ except ImportError:
     print("pyjokes Not Found...\nInstalling...")
     os.system("pip install pyjokes")
     print("pyjokes Installed")
-try: 
-    import os
-    import dbots  
-except ImportError: 
-    print("dbots Not Found...\nInstalling...")
-    os.system("pip install dbots")
-    print("dbots Installed")
 #import Modules
 import os
 import urllib.request
@@ -62,7 +55,6 @@ from datetime import datetime
 import asyncio
 import discord
 import shutil
-import dbots
 import pytz
 import string
 import discord_webhook
@@ -103,14 +95,6 @@ intents.members = True
 bot = commands.Bot(command_prefix = c['prefix'],intents=intents,status=discord.Status.idle,case_insensitive=True)
 bot.remove_command('help')
 #Stats Posting
-poster = dbots.ClientPoster(bot, 'discord.py', api_keys = {
-    'top.gg': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEwNTExOTk0ODUxNjgwNjY2MTAiLCJib3QiOnRydWUsImlhdCI6MTY3NjMwNjkzNn0.FoalNHkLE8Al5DYWsmqyx2CteNF8rNdz5I8aZl9gElk',
-    'discord.bots.gg': 'eyJhbGciOiJIUzI1NiJ9.eyJhcGkiOnRydWUsImlkIjoiNzYzNDcxMDQ5ODk0NTI3MDA2IiwiaWF0IjoxNjc2MzA2ODc3fQ.yPCMYrhGpmaC5XDE_c1HfJxCOb6TZD7OU2Db5DGDxvc',
-    'discordbotlist.com': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0IjoxLCJpZCI6IjEwNTExOTk0ODUxNjgwNjY2MTAiLCJpYXQiOjE2NzYzMDcyODZ9.7Q6gK8u3IqSsQhkscJkTZAGjUjau5SnlYcgg0R70v8k'
-})
-@poster.event
-async def on_auto_post(response):
-    print('Auto-Post:', response)
 #Ptero Api
 api = PterodactylClient('https://panel.sillydev.co.uk', c['ptero_account_key'])
 #Load Server File
@@ -174,9 +158,6 @@ async def Webhooklogging(channel,message):
 async def on_ready():
     print(f'{bot.user} Is Now Online And Ready To Send Messages!')
     await bot.loop.create_task(StatusChange())
-    await poster.post()
-    # This posts to all lists every 30 minutes
-    poster.start_loop()
 #Event for when a message is sent
 @bot.event
 async def on_message(message):
