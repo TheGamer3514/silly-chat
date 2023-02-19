@@ -1,84 +1,42 @@
 #Install Modules
-try: 
-    import os
-    import discord  
-except ImportError: 
-    print("Discord Not Found...\nInstalling...")
-    os.system("pip install discord")
-    print("Discord Installed")
-try: 
-    import os
-    import pytz  
-except ImportError: 
-    print("Pytz Not Found...\nInstalling...")
-    os.system("pip install pytz")
-    print("Pytz Installed")
-try: 
-    import os
-    import psutil  
-except ImportError: 
-    print("Psutil Not Found...\nInstalling...")
-    os.system("pip install psutil")
-    print("Psutil Installed")
-try: 
-    import os
-    import discord_webhook  
-except ImportError: 
-    print("discord_webhook Not Found...\nInstalling...")
-    os.system("pip install discord_webhook")
-    print("discord_webhook Installed")
-try: 
-    import os
-    import requests  
-except ImportError: 
-    print("requests Not Found...\nInstalling...")
-    os.system("pip install requests")
-    print("requests Installed")
-try: 
-    import os
-    import pydactyl  
-except ImportError: 
-    print("pydactyl Not Found...\nInstalling...")
-    os.system("pip install py-dactyl")
-    print("pydactyl Installed")
-try: 
-    import os
-    import pyjokes  
-except ImportError: 
-    print("pyjokes Not Found...\nInstalling...")
-    os.system("pip install pyjokes")
-    print("pyjokes Installed")
+import os
+
+PACKAGES = {
+    'discord': 'discord',
+    'pytz': 'pytz',
+    'psutil': 'psutil',
+    'discord_webhook': 'discord_webhook',
+    'requests': 'requests',
+    'pydactyl': 'py-dactyl',
+    'pyjokes': 'pyjokes',
+}
+
+for package_name, import_name in PACKAGES.items():
+    try:
+        __import__(import_name)
+    except ImportError:
+        print(f"{package_name} not found. Installing...")
+        os.system(f"pip install {package_name}")
+        print(f"{package_name} installed.")
+
 #import Modules
 import os
-import urllib.request
-from datetime import datetime
-import asyncio
-import discord
-import shutil
 import pytz
-import string
 import discord_webhook
-from discord_webhook import DiscordWebhook
 import multiprocessing
 import psutil
 import pyjokes
-from discord import Message, Guild, TextChannel, Permissions, app_commands
-from discord.ext import commands
-import json
-import time
 import requests
 import random
 import aiohttp
 import pydactyl
-import base64
-import http.server
-import socketserver
-from io import BytesIO
-from pydactyl import PterodactylClient
+
 last_usage = {}
+
 deathoptions=["Instantly Died","Had death appear at their door","Had Death Occur","Fell of a cliff","got too bored","vanished","got shot in the head with a laser","got too comftorable around bears","got depression and gave up","ended up in hell","dissapeared","Jumped Off A Building","Died","Fell up a flight of stairs.","Thought a necular power plant was a good place to go on holiday","Liked Jazz","Became a musician","Ate McDonalds","Became an artist","Turned to the dark side","Liked limes for some reason","Became a meme","Got 360 NO SCOPED BY A FOUR YEAR OLD!","Tried to play fortnite mobile","Didn't die!","Didn't have death occur!"]
 ball8answers = ['It is certain', 'It is decidedly so', 'Without a doubt', 'Yes – definitely', 'You may rely on it', 'As I see it, yes', 'Most likely', 'Outlook good', 'Yes Signs point to yes', 'Reply hazy', 'try again', 'Ask again later', 'Better not tell you now', 'Cannot predict now', 'Concentrate and ask again', 'Dont count on it', 'My reply is no', 'My sources say no', 'Outlook not so good', 'Very doubtful']
 heads_tails = ['<:Heads:1043603482474721331> Heads <:Heads:1043603482474721331>', '<:Tails:1043603443689988096> Tails <:Tails:1043603443689988096>']
+
 #Logging
 import logging
 handler = logging.FileHandler(filename='errors.log', encoding='utf-8', mode='w')
