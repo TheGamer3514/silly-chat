@@ -15,7 +15,7 @@ We welcome contributions from anyone who wants to add their own code to the bot.
 
 ## Screenshot Server
 
-Using the `screenshot` command requires a screenshot server. You can self host one [using this software](https://github.com/browserless/chrome).
+Using the `web` command requires a screenshot server. You can self host one [using this software](https://github.com/browserless/chrome).
 
 ## Resources
 
