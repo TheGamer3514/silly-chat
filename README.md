@@ -13,6 +13,10 @@ Silly Chat is a Discord global chat bot.
 
 We welcome contributions from anyone who wants to add their own code to the bot. If you'd like to contribute, simply create a pull request and it will be reviewed.
 
+## Screenshot Server
+
+Using the `screenshot` command requires a screenshot server. You can self host one [using this software](https://github.com/browserless/chrome).
+
 ## Resources
 
 - [Discord server](https://discord.gg/3qvpkgWSbF)
