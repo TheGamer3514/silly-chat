@@ -25,14 +25,6 @@ Using the `web` command requires a screenshot server. You can self host one [usi
 
 ## Resources
 
-- [Discord server](https://discord.gg/3qvpkgWSbF)
-- [Free hosting](https://panel.sillydev.co.uk)
+- [Discord server](https://discord.gg/sillydev)
+- [Free hosting](https://sillydev.co.uk)
 - Contact me: gamer@sillydev.co.uk
-
-## Images
-
-![image 1](https://user-images.githubusercontent.com/79448904/217915467-02718cde-3404-42c8-b89d-d3533032faed.png)
-![image 2](https://user-images.githubusercontent.com/79448904/217915602-4dd89a59-043c-4775-9f3f-bd2a36632773.png)
-![image 3](https://user-images.githubusercontent.com/79448904/217915642-b9873d2a-a68b-403d-9c59-32f480a59283.png)
-![image 4](https://user-images.githubusercontent.com/79448904/217915777-dcf5cab7-e955-4ce0-b438-ca39334f5937.png)
-![image 5](https://user-images.githubusercontent.com/79448904/217915814-1d22ebdb-9021-4769-9022-759d582dbd73.png)
