@@ -2,7 +2,7 @@
 >
 > ### Outdated:
 >
-> This respitory is outdated. V3 Coming soon!
+> This respitory is outdated. V3 Coming soon, maybe!
 
 ![Discord Bots](https://top.gg/api/widget/1051199485168066610.svg)
 # Silly Chat
