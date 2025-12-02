@@ -22,9 +22,3 @@ We welcome contributions from anyone who wants to add their own code to the bot.
 ## Screenshot Server
 
 Using the `web` command requires a screenshot server. You can self host one [using this software](https://github.com/browserless/chrome).
-
-## Resources
-
-- [Discord server](https://discord.gg/sillydev)
-- [Free hosting](https://sillydev.co.uk)
-- Contact me: gamer@sillydev.co.uk
